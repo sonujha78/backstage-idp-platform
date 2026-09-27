@@ -260,3 +260,13 @@ kubernetes:
           authProvider: 'serviceAccount'
           skipTLSVerify: true
           serviceAccountToken: ${K8S_SA_TOKEN}
+
+argocd:
+  username: admin
+  password: ${ARGOCD_AUTH_TOKEN}
+  appLocatorMethods:
+    - type: config
+      instances:
+        - name: argoInstance1
+          url: https://127.0.0.1:8080
+          token: ${ARGOCD_AUTH_TOKEN}
