@@ -1,0 +1,59 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: new-k8s-environment
+  title: New Kubernetes Environment
+  description: Scaffold a new Kubernetes namespace with resource quota and NetworkPolicy defaults for a team/project
+spec:
+  owner: guests
+  type: infrastructure
+
+  parameters:
+    - title: Environment details
+      required:
+        - teamName
+      properties:
+        teamName:
+          title: Team/Project Name
+          type: string
+          description: Name of the team or project (used as namespace name)
+          pattern: '^[a-z0-9-]+$'
+        cpuLimit:
+          title: CPU Limit
+          type: string
+          description: Total CPU request/limit for the namespace (e.g. "2")
+          default: "2"
+        memoryLimit:
+          title: Memory Limit
+          type: string
+          description: Total memory request/limit for the namespace (e.g. "2Gi")
+          default: "2Gi"
+        maxPods:
+          title: Max Pods
+          type: string
+          description: Maximum number of pods allowed in the namespace
+          default: "10"
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./content
+        values:
+          teamName: ${{ parameters.teamName }}
+          cpuLimit: ${{ parameters.cpuLimit }}
+          memoryLimit: ${{ parameters.memoryLimit }}
+          maxPods: ${{ parameters.maxPods }}
+
+    - id: apply
+      name: Apply to Cluster
+      action: kubernetes:apply
+      input:
+        path: k8s-environment.yaml
+
+  output:
+    text:
+      - title: Result
+        content: |
+          Namespace `${{ parameters.teamName }}` created with resource quota and default-deny NetworkPolicy.

@@ -16,6 +16,7 @@ backend.add(import('@backstage/plugin-proxy-backend'));
 // scaffolder plugin
 backend.add(import('@backstage/plugin-scaffolder-backend'));
 backend.add(import('@backstage/plugin-scaffolder-backend-module-github'));
+backend.add(import('./modules/k8sApplyModule'));
 backend.add(
   import('@backstage/plugin-scaffolder-backend-module-notifications'),
 );
