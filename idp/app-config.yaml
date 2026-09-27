@@ -198,6 +198,15 @@ catalog:
     - type: file
       target: ../../examples/entities.yaml
 
+    - type: url
+      target: https://github.com/sonujha78/ecommerce-order-processing-system/blob/main/catalog-info.yaml
+
+    - type: url
+      target: https://github.com/sonujha78/Fraud-Detection-Pipeline/blob/main/catalog-info.yaml
+
+    - type: url
+      target: https://github.com/sonujha78/autoscaling-web-platform/blob/main/catalog-info.yaml
+
     # Local example template
     - type: file
       target: ../../examples/template/template.yaml
