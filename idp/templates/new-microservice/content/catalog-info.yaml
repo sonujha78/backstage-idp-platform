@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: A new microservice scaffolded from the New Microservice template
+  annotations:
+    github.com/project-slug: sonujha78/${{ values.name }}
+    backstage.io/kubernetes-id: ${{ values.name }}
+spec:
+  type: service
+  lifecycle: experimental
+  owner: guests

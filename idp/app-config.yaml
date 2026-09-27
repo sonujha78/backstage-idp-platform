@@ -213,6 +213,11 @@ catalog:
       rules:
         - allow: [Template]
 
+    - type: file
+      target: ../../templates/new-microservice/template.yaml
+      rules:
+        - allow: [Template]
+
     # Local example organizational data
     - type: file
       target: ../../examples/org.yaml
