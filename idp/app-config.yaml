@@ -220,9 +220,6 @@ catalog:
     #   rules:
     #     - allow: [User, Group]
 
-kubernetes:
-  # see https://backstage.io/docs/features/kubernetes/configuration for kubernetes configuration options
-
 # see https://backstage.io/docs/permissions/getting-started for more on the permission framework
 permission:
   # setting this to `false` will disable permissions
@@ -232,3 +229,15 @@ permission:
 mcpActions:
   name: 'My Company Backstage' # defaults to "backstage"
   description: 'Tools for managing your software catalog, creating new services from templates, and exploring your developer portal' # optional
+
+kubernetes:
+  serviceLocatorMethod:
+    type: 'multiTenant'
+  clusterLocatorMethods:
+    - type: 'config'
+      clusters:
+        - url: ${K8S_CLUSTER_URL}
+          name: local-k3s
+          authProvider: 'serviceAccount'
+          skipTLSVerify: true
+          serviceAccountToken: ${K8S_SA_TOKEN}
