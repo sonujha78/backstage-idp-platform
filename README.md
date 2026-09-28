@@ -4,19 +4,42 @@ A self-service Internal Developer Platform built with [Backstage](https://backst
 
 ## Architecture
 
-~~~
-                        +--------------------------------+
-   Developer  --------> |  Backstage (idp/)              |
-                        |  catalog | scaffolder | docs   |
-                        +---+-----------+-----------+----+
-                            |           |           |
-              +-------------+     +-----+-----+     +----------------+
-              v                   v           v                      v
-        PostgreSQL 16       GitHub repos   K3s cluster          ArgoCD (argocd ns)
-        (catalog data)      catalog-info,  pods, quotas,        sync + health of
-        docker, port 5433   templates,     network policies     autoscaling-web-platform
-                            TechDocs md                         (git -> cluster)
-~~~
+```mermaid
+flowchart LR
+    dev([Developer]) --> ui
+
+    subgraph bs["Backstage IDP (idp/)"]
+        ui["Web UI :3000"]
+        cat["Software Catalog"]
+        scaf["Scaffolder + kubernetes:apply action"]
+        docs["TechDocs"]
+        perm["Permission policy (owner-only)"]
+        ui --> cat
+        ui --> scaf
+        ui --> docs
+        perm -. guards .-> cat
+    end
+
+    pg[("PostgreSQL 16<br/>Docker, :5433")]
+    gh["GitHub<br/>service repos, catalog-info.yaml,<br/>docs, GitHub Actions CI"]
+
+    subgraph k3s["K3s cluster"]
+        argo["ArgoCD"]
+        wl["Workloads and namespaces<br/>quota + NetworkPolicy"]
+        argo -- sync --> wl
+    end
+
+    cat -- stores entities --> pg
+    cat -- reads catalog-info.yaml --> gh
+    docs -- builds markdown from --> gh
+    scaf -- "Template 1: publish repo, register" --> gh
+    scaf -- "Template 2: kubectl apply" --> wl
+    cat -- "Kubernetes plugin (service account)" --> wl
+    cat -- "ArgoCD plugin (API)" --> argo
+    gh -- "k8s/ folder watched" --> argo
+```
+
+Developers work only through Backstage. It stores catalog data in PostgreSQL, reads service metadata and docs from GitHub, shows live pod status from K3s, and shows deployment status from ArgoCD, which itself syncs the cluster from Git.
 
 | Layer | Choice |
 |---|---|
@@ -29,19 +52,44 @@ A self-service Internal Developer Platform built with [Backstage](https://backst
 
 ## Repository layout
 
-~~~
-idp/                              Backstage app
-  app-config.yaml                 catalog locations, k8s, argocd, techdocs config
-  examples/org.yaml               groups: guests, payments-team, platform-team
-  templates/new-microservice/     Template 1
-  templates/new-k8s-environment/  Template 2
-  packages/backend/src/modules/
-    k8sApplyModule.ts             custom scaffolder action  kubernetes:apply
-    permissionPolicy.ts           owner-only permission policy
-docs/screenshots/                 evidence used below
-~~~
+```text
+backstage-idp-platform/
+├── README.md
+├── LICENSE
+├── docs/
+│   └── screenshots/                        # evidence images used in this README
+└── idp/                                    # the Backstage app
+    ├── app-config.yaml                     # catalog locations, Kubernetes, ArgoCD, TechDocs, DB
+    ├── package.json
+    ├── .env                                # secrets (git-ignored, not in the repo)
+    ├── examples/
+    │   ├── entities.yaml                   # sample entities from the scaffold
+    │   ├── org.yaml                        # groups guests / payments-team / platform-team + guest user
+    │   └── template/template.yaml          # default example template from the scaffold
+    ├── templates/
+    │   ├── new-microservice/               # Template 1
+    │   │   ├── template.yaml
+    │   │   └── content/
+    │   │       ├── main.py                 # FastAPI app (/ and /health)
+    │   │       ├── requirements.txt
+    │   │       ├── Dockerfile              # slim image, non-root user
+    │   │       ├── catalog-info.yaml       # auto-registers the new service
+    │   │       └── .github/workflows/ci.yaml   # GitHub Actions pipeline
+    │   └── new-k8s-environment/            # Template 2
+    │       ├── template.yaml
+    │       └── content/k8s-environment.yaml    # Namespace + ResourceQuota + NetworkPolicy
+    └── packages/
+        ├── app/src/
+        │   ├── App.tsx                     # frontend features (catalog, nav, home, ArgoCD plugin)
+        │   └── modules/                    # nav and home modules
+        └── backend/src/
+            ├── index.ts                    # backend plugins (catalog, scaffolder, kubernetes, argocd, permission)
+            └── modules/
+                ├── k8sApplyModule.ts       # custom scaffolder action: kubernetes:apply
+                └── permissionPolicy.ts     # owner-only permission policy
+```
 
-Secrets (DB password, GitHub token, cluster token, ArgoCD token) live in `idp/.env`, which is git-ignored.
+Key files only. The three service repos live in their own repositories: each holds its own `catalog-info.yaml`; ecommerce and autoscaling also hold the TechDocs sources, and autoscaling holds the `k8s/` folder that ArgoCD watches.
 
 ## 1. Service catalog
 
